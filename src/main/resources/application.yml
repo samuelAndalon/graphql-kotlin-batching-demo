@@ -3,3 +3,5 @@ graphql:
     - "com.example.demo"
   automaticPersistedQueries:
     enabled: true
+  batching:
+    enabled: true

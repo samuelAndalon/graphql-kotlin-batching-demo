@@ -1,7 +1,12 @@
 package com.example.demo
 
+import com.expediagroup.graphql.dataloader.KotlinDataLoader
 import com.expediagroup.graphql.server.operations.Query
-import kotlinx.coroutines.future.await
+import graphql.schema.DataFetchingEnvironment
+import org.dataloader.DataLoader
+import org.dataloader.DataLoaderFactory
+import org.dataloader.DataLoaderOptions
+import org.dataloader.stats.SimpleStatisticsCollector
 import org.springframework.stereotype.Component
 import java.util.concurrent.CompletableFuture
 
@@ -26,8 +31,30 @@ class UserRepository {
 class UserService(
     private val userRepository: UserRepository = UserRepository()
 ) {
-    suspend fun getUser(id: Int): User? =
-        userRepository.getUser(id).await()
+    fun getUser(id: Int): CompletableFuture<User?> =
+        userRepository.getUser(id)
+
+    fun getUsers(ids: List<Int>): CompletableFuture<List<User?>> {
+        val users = ids.map { id -> userRepository.getUser(id).get() }
+        return CompletableFuture.completedFuture(users)
+    }
+}
+
+class UserDataSource(
+    private val userService: UserService = UserService()
+) : KotlinDataLoader<Int, User?> {
+    override val dataLoaderName: String = "UserDataLoader"
+
+    override fun getDataLoader(): DataLoader<Int, User?> =
+        DataLoaderFactory.newDataLoader(
+            { ids -> userService.getUsers(ids) },
+            DataLoaderOptions.newOptions().setStatisticsCollector(::SimpleStatisticsCollector)
+        )
+
+    fun getUser(id: Int, environment: DataFetchingEnvironment): CompletableFuture<User?> =
+        environment
+            .getDataLoader<Int, User?>("UserDataLoader")
+            .load(id)
 }
 
 /**
@@ -44,8 +71,8 @@ class UserService(
  */
 @Component
 class SimpleQuery : Query {
-    val userService = UserService()
+    val userDataSource = UserDataSource()
 
-    suspend fun user(id: Int): User? =
-        userService.getUser(id)
+    fun user(id: Int, environment: DataFetchingEnvironment): CompletableFuture<User?> =
+        userDataSource.getUser(id, environment)
 }
