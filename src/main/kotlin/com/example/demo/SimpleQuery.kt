@@ -82,4 +82,5 @@ class SimpleQuery(
             .toFlux()
             .flatMap { it }
             .collectList()
+
 }
