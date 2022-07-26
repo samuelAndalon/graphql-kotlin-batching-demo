@@ -5,6 +5,7 @@ import com.example.demo.product.ProductDataSource
 import com.example.demo.product.ProductRequest
 import com.example.demo.user.User
 import com.example.demo.user.UserDataSource
+import com.example.demo.user.UserService
 import com.expediagroup.graphql.server.operations.Query
 import graphql.schema.DataFetchingEnvironment
 import graphql.schema.SelectedField
@@ -19,8 +20,12 @@ import java.util.concurrent.CompletableFuture
 @Component
 class SimpleQuery(
     val userDataSource: UserDataSource,
+    val userService: UserService,
     val productDataSource: ProductDataSource
-    ) : Query {
+) : Query {
+
+    /*suspend fun user(id: Int): User? =
+        userService.getUser(id)*/
 
     fun user(id: Int, environment: DataFetchingEnvironment): CompletableFuture<User?> =
         userDataSource.getUser(id, environment)
@@ -31,13 +36,13 @@ class SimpleQuery(
             environment
         )
 
+    fun hello(): Mono<String> =
+        "graphql kotlin".toMono().delayElement(Duration.ofSeconds(1))
+
     fun double(numbers: List<Int>): Flux<Int> =
         numbers.toFlux().flatMap { number ->
             (number * 2).toMono().delayElement(Duration.ofSeconds(1))
         }
-
-    fun hello(): Mono<String> =
-        "graphql kotlin".toMono().delayElement(Duration.ofSeconds(1))
 
 }
 /**
