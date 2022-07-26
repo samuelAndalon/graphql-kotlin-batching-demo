@@ -1,34 +1,45 @@
 package com.example.demo
 
+import com.example.demo.product.Product
+import com.example.demo.product.ProductDataSource
+import com.example.demo.product.ProductRequest
+import com.example.demo.user.User
+import com.example.demo.user.UserDataSource
 import com.expediagroup.graphql.server.operations.Query
 import graphql.schema.DataFetchingEnvironment
+import graphql.schema.SelectedField
 import org.springframework.stereotype.Component
-import org.springframework.stereotype.Service
+import reactor.core.publisher.Flux
+import reactor.core.publisher.Mono
+import reactor.kotlin.core.publisher.toFlux
+import reactor.kotlin.core.publisher.toMono
+import java.time.Duration
 import java.util.concurrent.CompletableFuture
 
-data class User(val id: Int, val name: String, val lastName: String)
+@Component
+class SimpleQuery(
+    val productDataSource: ProductDataSource,
+    val userDataSource: UserDataSource
+) : Query {
 
-@Service
-class UserService {
-    private val users = mapOf(
-        1 to User(1, "John", "Doe"),
-        2 to User(2, "Jane", "Doe")
-    )
-
-    fun getUsers(ids: Set<Int>): CompletableFuture<Map<Int, User?>> =
-        CompletableFuture.completedFuture(
-            ids.associateWith { id -> users[id] }
+    fun product(id: Int, environment: DataFetchingEnvironment): CompletableFuture<Product?> =
+        productDataSource.getProduct(
+            ProductRequest(id, environment.selectionSet.immediateFields.map(SelectedField::getName)),
+            environment
         )
-}
 
-@Service
-class UserDataSource {
-    fun getUser(id: Int, environment: DataFetchingEnvironment): CompletableFuture<User?> =
-        environment
-            .getDataLoader<Int, User?>("UserDataLoader")
-            .load(id)
-}
+    fun user(id: Int, environment: DataFetchingEnvironment): CompletableFuture<User?> =
+        userDataSource.getUser(id, environment)
 
+    fun double(numbers: List<Int>): Flux<Int> =
+        numbers.toFlux().flatMap { number ->
+            (number * 2).toMono().delayElement(Duration.ofSeconds(1))
+        }
+
+    fun hello(): Mono<String> =
+        "graphql kotlin".toMono().delayElement(Duration.ofSeconds(1))
+
+}
 /**
  * Schema Generator will generate:
  * type Query {
@@ -40,8 +51,3 @@ class UserDataSource {
  *     lastName: String!
  * }
  */
-@Component
-class SimpleQuery(val userDataSource: UserDataSource) : Query {
-    fun user(id: Int, environment: DataFetchingEnvironment): CompletableFuture<User?> =
-        userDataSource.getUser(id, environment)
-}

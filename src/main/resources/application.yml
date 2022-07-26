@@ -5,3 +5,4 @@ graphql:
     enabled: true
   batching:
     enabled: true
+    strategy: SYNC_EXHAUSTION
