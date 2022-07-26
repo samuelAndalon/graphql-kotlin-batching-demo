@@ -18,18 +18,18 @@ import java.util.concurrent.CompletableFuture
 
 @Component
 class SimpleQuery(
-    val productDataSource: ProductDataSource,
-    val userDataSource: UserDataSource
-) : Query {
+    val userDataSource: UserDataSource,
+    val productDataSource: ProductDataSource
+    ) : Query {
+
+    fun user(id: Int, environment: DataFetchingEnvironment): CompletableFuture<User?> =
+        userDataSource.getUser(id, environment)
 
     fun product(id: Int, environment: DataFetchingEnvironment): CompletableFuture<Product?> =
         productDataSource.getProduct(
             ProductRequest(id, environment.selectionSet.immediateFields.map(SelectedField::getName)),
             environment
         )
-
-    fun user(id: Int, environment: DataFetchingEnvironment): CompletableFuture<User?> =
-        userDataSource.getUser(id, environment)
 
     fun double(numbers: List<Int>): Flux<Int> =
         numbers.toFlux().flatMap { number ->

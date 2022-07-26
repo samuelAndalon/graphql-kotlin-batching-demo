@@ -25,12 +25,10 @@ class DemoApplication {
             override fun willResolveMonad(type: KType): KType =
                 when (type.classifier) {
                     Mono::class -> type.arguments.firstOrNull()?.type
-                    Flux::class -> {
-                        type.arguments.firstOrNull()?.let { argument ->
-                            List::class.createType(
-                                arguments = listOf(KTypeProjection(argument.variance, argument.type))
-                            )
-                        }
+                    Flux::class -> type.arguments.firstOrNull()?.let { argument ->
+                        List::class.createType(
+                            arguments = listOf(KTypeProjection(argument.variance, argument.type))
+                        )
                     }
                     else -> type
                 } ?: type
