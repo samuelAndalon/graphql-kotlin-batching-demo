@@ -6,3 +6,6 @@ graphql:
   batching:
     enabled: true
     strategy: SYNC_EXHAUSTION
+  federation:
+    enabled: true
+    opt-in-v2: true
