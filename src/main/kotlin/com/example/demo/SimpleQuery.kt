@@ -19,34 +19,16 @@ import reactor.kotlin.core.publisher.toMono
 import java.time.Duration
 import java.util.concurrent.CompletableFuture
 
-data class ParentQueryModel(val childQueryModel: ChildQueryModel? = ChildQueryModel("defaultValue"))
-data class ChildQueryModel(val value: String? = "defaultValue")
-data class PriceRange(val min: Double, val max: Double)
-
 @Component
 class SimpleQuery(
     val userDataSource: UserDataSource,
-    val userService: UserService,
     val productDataSource: ProductDataSource
 ) : Query {
 
-    suspend fun returnTrueIfChildValueDefaults(parentQueryModel: ParentQueryModel): Boolean {
-        return parentQueryModel.childQueryModel?.value == "defaultValue"
-    }
-
-    fun priceRange(range: PriceRange, environment: DataFetchingEnvironment): Double =
-        range.min
-
-    /*suspend fun user(id: Int): User? =
-        userService.getUser(id)*/
-
     fun user(id: Int, environment: DataFetchingEnvironment): CompletableFuture<GraphQLUser?> =
-        environment
-            .getDataLoader<Int, User?>("UserDataLoader")
-            .load(id)
-            .thenApplyAsync {
-                it?.toGraphQLUser()
-            }
+        userDataSource.getUser(id, environment).thenApplyAsync {
+            it?.toGraphQLUser()
+        }
 
     fun product(id: Int, environment: DataFetchingEnvironment): CompletableFuture<Product?> =
         productDataSource.getProduct(
